@@ -1,7 +1,6 @@
 package fi.kroon.vadret.data.weather
 
-import android.util.Log
-import fi.kroon.vadret.data.Request
+import fi.kroon.vadret.data.HEADER_NO_CACHE
 import fi.kroon.vadret.data.exception.Either
 import fi.kroon.vadret.data.exception.Failure
 import fi.kroon.vadret.data.weather.model.Weather
@@ -9,33 +8,34 @@ import fi.kroon.vadret.data.weather.net.WeatherApi
 import fi.kroon.vadret.di.scope.VadretApplicationScope
 import fi.kroon.vadret.utils.NetworkHandler
 import io.reactivex.Single
+import timber.log.Timber
 import javax.inject.Inject
-
-const val TAG = "WeatherRepo"
 
 @VadretApplicationScope
 class WeatherRepository @Inject constructor(
-    val weatherApi: WeatherApi,
+    private val weatherApi: WeatherApi,
     val networkHandler: NetworkHandler
 ) {
-
-    fun get(request: Request): Single<Either<Failure, Weather>> {
-        return when (networkHandler.isConnected) {
-            true -> Single.just(request).flatMap {
-                _ -> with(request) {
-                weatherApi.get(category, version, longitude, latitude).map {
-                    Log.d(TAG, "Response: ${it.body()}")
+    fun get(weatherRequest: WeatherRequest, forceCacheInvalidation: Boolean = false): Single<Either<Failure, Weather>> =
+        Single.just(weatherRequest).flatMap { _ ->
+            with(weatherRequest) {
+                weatherApi.get(category, version, longitude, latitude, getCacheHeader(forceCacheInvalidation)).map {
+                    Timber.d("Response: ${it.body()}")
                     Either.Right(it.body()!!) as Either<Failure, Weather>
                 }
             }
-            }.doOnEvent {
-                t1, t2 -> Log.d(TAG, "T1: $t1, T2: $t2")
-            }.doOnError {
-                Log.d(TAG, "Error occured: $it")
-            }.onErrorReturn {
-                Either.Left(Failure.NetworkException())
-            }
-            false, null -> Single.just(Either.Left(Failure.NetworkOfflineFailure()))
+        }.doOnEvent { t1, t2 ->
+            Timber.d("T1: $t1, T2: $t2")
+        }.doOnError {
+            Timber.d("Error occurred: $it")
+        }.onErrorReturn {
+            Either.Left(Failure.NetworkException())
         }
+
+    private fun getCacheHeader(forceCacheInvalidation: Boolean) = if (networkHandler.isConnected && forceCacheInvalidation) {
+        // Allow invalidation only if there is a chance of getting new data
+        HEADER_NO_CACHE
+    } else {
+        null
     }
 }

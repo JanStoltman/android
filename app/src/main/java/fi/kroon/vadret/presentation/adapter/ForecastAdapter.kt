@@ -1,6 +1,5 @@
 package fi.kroon.vadret.presentation.adapter
 
-import android.util.Log
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
@@ -8,17 +7,15 @@ import androidx.recyclerview.widget.RecyclerView
 import fi.kroon.vadret.R
 import fi.kroon.vadret.data.weather.model.TimeSerie
 import fi.kroon.vadret.di.scope.VadretApplicationScope
-import kotlinx.android.synthetic.main.item_header.view.*
-import kotlinx.android.synthetic.main.item_layout.view.*
+import kotlinx.android.synthetic.main.weather_item_header.view.*
+import kotlinx.android.synthetic.main.weather_item.view.*
 import org.threeten.bp.LocalDate
 import org.threeten.bp.OffsetDateTime
 import org.threeten.bp.format.TextStyle
+import timber.log.Timber
 import java.util.Locale
-
 import javax.inject.Inject
 import kotlin.properties.Delegates
-
-const val TAGA = "ForecastAdapter"
 
 @VadretApplicationScope
 class ForecastAdapter @Inject constructor() : RecyclerView.Adapter<RecyclerView.ViewHolder>() {
@@ -44,29 +41,29 @@ class ForecastAdapter @Inject constructor() : RecyclerView.Adapter<RecyclerView.
     class ForecastViewHolder(itemView: View) : RecyclerView.ViewHolder(itemView) {
         fun bind(timeSerie: TimeSerie) {
 
-            Log.d(TAGA, "TimeSerie: ${timeSerie.parameters}")
-
+            Timber.d("TimeSerie: ${timeSerie.parameters}")
             itemView.time.text = OffsetDateTime.parse(timeSerie.validTime).toLocalTime().toString()
 
             timeSerie.parameters.map {
 
                 if (it.name == "t") {
-                    Log.d(TAGA, "t: ${it.values[0]}")
+                    Timber.d("t: ${it.values[0]}")
                     itemView.temperature.text = it.values[0].toString()
                 } else if (it.name == "r") {
-                    Log.d(TAGA, "r: ${it.values[0]}")
+                    Timber.d("r: ${it.values[0]}")
                     itemView.r.text = it.values[0].toInt().toString()
                 } else if (it.name == "gust") {
-                    Log.d(TAGA, "gust: ${it.values[0]}")
+                    Timber.d("gust: ${it.values[0]}")
                     itemView.gust.text = it.values[0].toString()
                 } else if (it.name == "Wsymb2") {
-                    Log.d(TAGA, "wsymb2: ${it.values[0]}")
-                    itemView.wsymb2.setText(handleWsymb2(it.values[0].toInt()))
+                    Timber.d("wsymb2: ${it.values[0]}")
+                    itemView.wsymb2.setText(handleWsymb2Description(it.values[0].toInt()))
+                    itemView.wsymb2Icon.setImageResource(handleWsymb2Icon(it.values[0].toInt()))
                 }
             }
         }
 
-        private fun handleWsymb2(index: Int): Int {
+        private fun handleWsymb2Description(index: Int): Int {
             return when (index) {
                 1 -> R.string.wsymb2_clear_sky
                 2 -> R.string.wsymb2_nearly_clear_sky
@@ -101,6 +98,41 @@ class ForecastAdapter @Inject constructor() : RecyclerView.Adapter<RecyclerView.
             }
         }
 
+        fun handleWsymb2Icon(index: Int): Int {
+            return when (index) {
+                1 -> R.drawable.wsymb2_clear_sky
+                2 -> R.drawable.wsymb2_nearly_clear_sky
+                3 -> R.drawable.wsymb2_variable_cloudiness
+                4 -> R.drawable.wsymb2_halfclear_sky
+                5 -> R.drawable.wsymb2_cloudy_sky
+                6 -> R.drawable.wsymb2_overcast
+                7 -> R.drawable.wsymb2_fog
+                8 -> R.drawable.wsymb2_light_rain_showers
+                9 -> R.drawable.wsymb2_moderate_rain_showers
+                10 -> R.drawable.wsymb2_heavy_rain_showers
+                11 -> R.drawable.wsymb2_thunderstorm
+                12 -> R.drawable.wsymb2_light_sleet_showers
+                13 -> R.drawable.wsymb2_moderate_sleet_showers
+                14 -> R.drawable.wsymb2_heavy_sleet_showers
+                15 -> R.drawable.wsymb2_light_snow_showers
+                16 -> R.drawable.wsymb2_moderate_snow_showers
+                17 -> R.drawable.wsymb2_heavy_snow_showers
+                18 -> R.drawable.wsymb2_light_rain
+                19 -> R.drawable.wsymb2_moderate_rain
+                20 -> R.drawable.wsymb2_heavy_rain
+                21 -> R.drawable.wsymb2_thunder
+                22 -> R.drawable.wsymb2_light_sleet
+                23 -> R.drawable.wsymb2_moderate_sleet
+                24 -> R.drawable.wsymb2_heavy_sleet
+                25 -> R.drawable.wsymb2_light_snowfall
+                26 -> R.drawable.wsymb2_moderate_snowfall
+                27 -> R.drawable.wsymb2_heavy_snowfall
+                else -> {
+                    R.drawable.wsymb2_clear_sky
+                }
+            }
+        }
+
         fun handlePrSort(prSort: Int) {
             when (prSort) {
                 0 -> R.string.prsort_no_precipitation
@@ -123,8 +155,8 @@ class ForecastAdapter @Inject constructor() : RecyclerView.Adapter<RecyclerView.
 
     override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): RecyclerView.ViewHolder {
         return when (viewType) {
-            TYPE_WEEKDAY -> WeekdayViewHolder(LayoutInflater.from(parent.context).inflate(R.layout.item_header, parent, false))
-            else -> ForecastViewHolder(LayoutInflater.from(parent.context).inflate(R.layout.item_layout, parent, false))
+            TYPE_WEEKDAY -> WeekdayViewHolder(LayoutInflater.from(parent.context).inflate(R.layout.weather_item_header, parent, false))
+            else -> ForecastViewHolder(LayoutInflater.from(parent.context).inflate(R.layout.weather_item, parent, false))
         }
     }
 
